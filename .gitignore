@@ -1,0 +1,22 @@
+# files to not track
+*.docx
+*.png
+*.aux
+*.bbl
+*.blg
+*.dvi
+*.log
+*.synctex.gz
+*.pdf
+*.xlsx
+*.tif
+*.pptx
+*.svg
+*.jpg
+
+# git shortcut bat files
+AddCommitPush.bat
+PullFromGithub.bat
+
+# directories to not track
+archive/
