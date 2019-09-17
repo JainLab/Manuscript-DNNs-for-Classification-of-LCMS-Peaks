@@ -8,3 +8,5 @@ All files included herein are covered under the Copyright language included in L
 
 The file *WorkFlow.md* provides guidance on using the scripts.
 
+For training the neural net model from scratch using the data sets that we used, first download the datasets from https://doi.org/doi:10.25345/C5FD2F. Then use the script EDML_deep_learning2.py. 
+
