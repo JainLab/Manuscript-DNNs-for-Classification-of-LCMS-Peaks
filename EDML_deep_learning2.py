@@ -29,7 +29,7 @@ os.environ["PATH"]+=os.pathsep+'C:\\Program Files (x86)\\graphviz\\release\\bin\
 from keras.callbacks import EarlyStopping
 import h5py
 from keras.models import load_model
-
+# load the train, test and cal data from a .mat file
 Xy =  h5py.File('D:\\Projects\\P9_EDML\\EDML_trainTestCalData15.mat','r')
 arrays ={}
 for k,v in Xy.items() :
@@ -61,13 +61,13 @@ calX = calX.reshape(calX.shape[0], calX.shape[1], calX.shape[2], 1)
 nb_classes=2
 batch_size= 128
 input_shape=(64,64,1)
-nb_neurons=[32,16,16,32,64,64]
+nb_neurons=[32,16]
 activation='relu'
 optimizer='nadam'
 count=1
 model = Sequential()
     
-    # Add each layer.
+# Add each layer iteratively.
 for i in range(0,2):
     # Need input shape for first layer.
     if i == 0:
@@ -83,14 +83,12 @@ for i in range(0,2):
 
 
 model.add(Flatten())
-# always use last nb_neurons value for dense layer
-model.add(Dense(nb_neurons[len(nb_neurons) - 1], activation = activation))
+model.add(Dense(64, activation = activation))
 model.add(Dropout(0.5))
 model.add(Dense(nb_classes, activation = 'softmax'))
 
-#BAYESIAN CONVOLUTIONAL NEURAL NETWORKS WITH BERNOULLI APPROXIMATE VARIATIONAL INFERENCE
-#need to read this paper
-model=multi_gpu_model(model)
+# uncomment the next line if you want to train the model on gpu
+# model=multi_gpu_model(model)
 model.compile(loss='categorical_crossentropy',
           optimizer=optimizer,
           metrics=['mse','accuracy'])
@@ -100,7 +98,8 @@ model.compile(loss='categorical_crossentropy',
 print(model.summary())
 history=model.fit(Xtrain,yTrain,validation_data=(calX, calY),epochs=500,batch_size=128, callbacks=[EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)], verbose=1)
 count=count+1
-#%%
+#%% Testing model performance
+
 y_pred_train=model.predict(Xtrain)
 fprt, tprt,thresholdst=roc_curve(yTrain[:,1],y_pred_train[:,1])
 auct=roc_auc_score(yTrain[:,1], y_pred_train[:,1])
@@ -108,7 +107,6 @@ auct=roc_auc_score(yTrain[:,1], y_pred_train[:,1])
 y_pred_cal=model.predict(calX)
 fprc, tprc,thresholdsc=roc_curve(calY[:,1],y_pred_cal[:,1])
 aucc=roc_auc_score(calY[:,1], y_pred_cal[:,1])
-
 
 scores=model.evaluate(XTest,yTest)
 print(scores[2]*100)
@@ -125,11 +123,13 @@ pyplot.ylabel('Probability of detection', fontsize=10)
 pyplot.rcParams["figure.figsize"]=(2.5,2.5)
 pyplot.xlim(-0.01,1)
 pyplot.ylim(0.1)
-pyplot.savefig('D:\Projects\P9_EDML\MLROC15.tif',dpi=600, bbox_inches='tight')
-plot_model(model,to_file='D:\Projects\P9_EDML\ML_Model15.tif',show_shapes=True,show_layer_names=True)
-model.save('D:\Projects\P9_EDML\MLDeepLearningModel15.h5')
+# saves in your current working directory
+pyplot.savefig('MLROC15.tif',dpi=600, bbox_inches='tight')
+plot_model(model,to_file='ML_Model15.tif',show_shapes=True,show_layer_names=True)
+model.save('MLDeepLearningModel15.h5')
 
-Xy =  h5py.File('D:\\Projects\\P9_EDML\\EDML_Test15.mat','r')
+#%% Load independent test data set
+Xy =  h5py.File('EDML_Test15.mat','r')
 arrays ={}
 for k,v in Xy.items() :
     arrays[k] = np.array(v)
@@ -143,8 +143,8 @@ Xtest2=Xtest2.reshape(Xtest2.shape[0],Xtest2.shape[1],Xtest2.shape[2],1)
 ytest2 = model.predict(Xtest2)
 
 
-model= load_model('D:\Projects\P9_EDML\MLDeepLearningModel15.h5')
-Xy =  h5py.File('D:\\Projects\\P9_EDML\\EDML_RestSetTest15.mat','r')
+model= load_model('MLDeepLearningModel15.h5')
+Xy =  h5py.File('EDML_RestSetTest15.mat','r')
 arrays ={}
 for k,v in Xy.items() :
     arrays[k] = np.array(v)
