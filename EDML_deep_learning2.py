@@ -29,8 +29,9 @@ os.environ["PATH"]+=os.pathsep+'C:\\Program Files (x86)\\graphviz\\release\\bin\
 from keras.callbacks import EarlyStopping
 import h5py
 from keras.models import load_model
+# if you haven't already, download the datasets from https://doi.org/doi:10.25345/C5FD2F
 # load the train, test and cal data from a .mat file
-Xy =  h5py.File('D:\\Projects\\P9_EDML\\EDML_trainTestCalData15.mat','r')
+Xy =  h5py.File('EDML_trainTestCalData15.mat','r')
 arrays ={}
 for k,v in Xy.items() :
     arrays[k] = np.array(v)
