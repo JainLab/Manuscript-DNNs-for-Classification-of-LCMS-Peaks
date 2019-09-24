@@ -3,23 +3,25 @@
 # Create a table that includes the max intensity for each MS1 table for
 # each window
 
-# clear existing variables-----------------------------------------------------
-# remove variables from workspace
-rm(list = ls())
-gc()
+# To restart, simply re-run the script. It will start where it previously left
+# off.
 
 # User Input ------------------------------------------------------------------
 
-# Path to folder with MS1 table csv files
-# use \\ instead of \ to separate directories
+# For Windows operating system use \\ instead of \ to separate directories
 # example:
-# mzXMLDir <- 'M:\\folder1\\foldwerWithFile'
-ms1TableDir <- "M:\\folder1\\foldwerWithFile"
+# exampleDir <- 'M:\\folder1\\folderWithFile'
+
+# Path to folder with MS1 table csv files
+ms1TableDir <- "M:\\folder1\\folderWithFile"
 
 # path to folder where output directory will be created
-outPutParentDir <- "M:\\folder2\\foldwerWithFile"
+outPutParentDir <- "M:\\folder1\\folderWithFile"
 
 # csv filename with peak windows in parent directory
+# the standard format for this table has the following columns:
+# Window ID, min mz, max mz, min retention time, max retention time
+# column numbers may be adjusted below if necessary
 windowCSV <- "filename.csv"
 
 # proportion of processors to use 0-1
@@ -62,6 +64,13 @@ if (!dir.exists(outputFolderPath)) {
   dir.create(outputFolderPath)
 }
 
+# create output folder for single file tables
+dirSingleFileTables <- paste0(outPutParentDir,"/","singleFileTables")
+
+if (!dir.exists(dirSingleFileTables)) {
+  dir.create(dirSingleFileTables)
+}
+
 # Initialize summary file -------------------------------------------
 
 logFilePath <- paste0(outputFolderPath,"/",
@@ -99,12 +108,24 @@ fileNameList <- list.files(path = ms1TableDir, pattern = "\\.csv$",
                            full.names = FALSE, recursive = FALSE,
                            ignore.case = TRUE)
 
-# sequence of integers for each file
-fileSeq <- 1:length(filePathList)
-
 # create table
 dt.ms1TableFiles <- data.table(path = filePathList,
                                name = fileNameList)
+
+# for restart - remove previously written tables ----------------------------
+
+# list tables already written
+lst.writtenTables <- list.files(path = dirSingleFileTables, pattern = "\\.csv$",
+                                full.names = FALSE, recursive = FALSE,
+                                ignore.case = TRUE)
+
+# remove previously written table files from table
+dt.ms1TableFiles <- dt.ms1TableFiles[!(name %in% lst.writtenTables)]
+
+
+# sequence of integers for each file
+fileSeq <- 1:nrow(dt.ms1TableFiles )
+
 
 # functions: create window max table for single ms1 table -------------------
 
@@ -148,7 +169,8 @@ GetWindowMaxPoint <- function(windowNum, dt.ms1Table, tableName,
 
 }
 
-WindowMaxPointTable <- function(fileNum, dt.ms1TableFiles, dt.windows) {
+WindowMaxPointTable <- function(fileNum, dt.ms1TableFiles, dt.windows,
+                                dirSingleFileTables) {
 
   # function pulls the highest intensity value for each window in a file
   # and creates a long form table
@@ -161,11 +183,19 @@ WindowMaxPointTable <- function(fileNum, dt.ms1TableFiles, dt.windows) {
   # outputFolderPath is the folder where the individual peak directories are
   # created
 
+  fileName <- dt.ms1TableFiles$name[fileNum]
+
   # print for progress reporting
-  print(dt.ms1TableFiles$name[fileNum])
+  print(fileName)
 
   # Read the MS1 table
-  dt.ms1Table <- fread(dt.ms1TableFiles$path[fileNum])
+  dt.ms1Table <- fread(file = dt.ms1TableFiles$path[fileNum],
+                       sep = ",",
+                       header = TRUE,
+                       select = 1:3,
+                       colClasses = list(double = 1:3),
+                       verbose = FALSE,
+                       showProgress = FALSE)
 
   # get the table name (from the original LCMS file)
   tableName <- gsub(".csv","",dt.ms1TableFiles$name[fileNum])
@@ -180,6 +210,13 @@ WindowMaxPointTable <- function(fileNum, dt.ms1TableFiles, dt.windows) {
   # combine list into single table
   dt.FileWindowMax <- rbindlist(dt.FileWindowMax, use.names = FALSE,
                                 fill = FALSE, idcol = NULL)
+
+  # write table
+  writePath <- paste0(dirSingleFileTables, "/", fileName)
+  fwrite(dt.FileWindowMax,
+         file = writePath,
+         showProgress = FALSE,
+         verbose = FALSE)
 
   return(dt.FileWindowMax)
 
@@ -208,7 +245,8 @@ clusterEvalQ(clustr, {
 clusterExport(clustr, c("WindowMaxPointTable",
                         "GetWindowMaxPoint",
                         "dt.windows",
-                        "dt.ms1TableFiles"))
+                        "dt.ms1TableFiles",
+                        "dirSingleFileTables"))
 
 logText <-
   UpdateLogText(logText,"cluster setup",runTime(startTime))
@@ -217,17 +255,36 @@ UpdateLogFile(logFilePath, logText)
 # write tables - parallel processing - use functions ---------------------------------------
 
 # apply in parallel with cluster
-dt.fileWindowTable <- parLapply(clustr, fileSeq, WindowMaxPointTable,
-          dt.ms1TableFiles, dt.windows)
+parLapply(clustr, fileSeq, WindowMaxPointTable,
+          dt.ms1TableFiles, dt.windows, dirSingleFileTables)
 
 logText <-
-  UpdateLogText(logText,"peak max table complete",runTime(startTime))
+  UpdateLogText(logText,"write single file peak tables complete",runTime(startTime))
 UpdateLogFile(logFilePath, logText)
 
 # close the cluster ---------------------------------------------
 
 stopCluster(clustr)
 rm(clustr)
+
+# import tables as list --------------------------------------------------
+
+list.maxWindowIntTables <- list.files(path = dirSingleFileTables,
+                                      pattern = "\\.csv$",
+                                      full.names = TRUE, recursive = FALSE,
+                                      ignore.case = TRUE)
+
+dt.fileWindowTable <- lapply(list.maxWindowIntTables, fread,
+                             sep = ",",
+                             header = TRUE,
+                             select = 1:3,
+                             colClasses = c("character","character","numeric"),
+                             verbose = FALSE,
+                             showProgress = FALSE)
+
+logText <-
+  UpdateLogText(logText,"single max tables imported",runTime(startTime))
+UpdateLogFile(logFilePath, logText)
 
 # combine list -------------------------------------------------------------
 
