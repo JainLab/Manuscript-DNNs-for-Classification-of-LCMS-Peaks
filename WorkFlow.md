@@ -49,7 +49,7 @@
 
 ## Application of the Deep Neural Network Scripts
 
-- Generate a peak window table using output from MZmine 2 or output from another peak selection software. Different methods can be used for developing the window boundaries, using the apex values, or retention time start and end and m/z min and m/z max. The best method is dependent on the chromatography for the specific LC-MS method and may require trial and error to determine. The further the separation between isobaric peaks, the easier it will be to generate appropriate windows that do not split peaks or contain multiple peaks.
+- Generate a peak window table using output from MZmine 2 or output from another peak selection software. Different methods can be used for developing the window boundaries, using the apex values, or retention time start and end and m/z min and m/z max. The best method is dependent on the chromatography for the specific LC-MS method and may require trial and error to determine. The further the separation between isobaric peaks, the easier it will be to generate appropriate windows that do not split peaks or contain multiple peaks. The script *PeakWindowGenerator.R* can be used to generate peak windows from MZmine 2 output using different parameters for determining the window bounds. Export MZmine 2 peak list using the options listed in the User Input section of the script.
 - An example peak window table is provided as *exampleWindowTable.csv*. This table has only 5 peak rows to illustrate the formatting. This table will commonly have over 1000 rows (and often many times that) in typical use cases.
 - Use *mzXMLtoTables.R* script to create MS1 tables from the mzXML files.
 - Use *ExtractWindowMaxIntensity.R* to extract the max intensities from the peak windows

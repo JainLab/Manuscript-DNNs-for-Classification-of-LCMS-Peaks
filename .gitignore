@@ -17,6 +17,7 @@
 # git shortcut bat files
 AddCommitPush.bat
 PullFromGithub.bat
+Search_Contents.bat
 
 # directories to not track
 archive/
