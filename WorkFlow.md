@@ -5,7 +5,7 @@
 - Download and install the most recent version of R for your operating system (https://www.r-project.org/)
 
 - We recommend using the popular free IDE RStudio (https://www.rstudio.com/) for running the scripts, though other IDEs can be used or the interpreter may be run from the command line.
-- The scripts are heavily commented to help interested users understand the algorithm.
+- The scripts are heavily commented to help interested users understand the algorithms. However, it should be noted that the scripts were written to work with Windows operating system, so there may be edits required for them to work correctly in other operating systems.
 - Each script has 3 sections that a user should review:
   - Each script begins with a *Description* indicating briefly the purpose and function of the script
   - Each script includes a *User Input* section where the variables that need to be adjusted by the user are defined. Each variable has a brief description to help users assign the appropriate value
