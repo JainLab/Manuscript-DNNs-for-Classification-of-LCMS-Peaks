@@ -3,6 +3,11 @@
 # uses tables from manual review and model peak scoring to remove likely
 # bad peak windows from the window list
 
+# clear existing variables-----------------------------------------------------
+# remove variables from workspace
+rm(list = ls())
+gc()
+
 # User Input ------------------------------------------------------------------
 
 # for Windows operating system use \\ or / instead of \ to separate directories
@@ -11,24 +16,24 @@
 
 # path to folder where output directory will be created
 # put copies of the CSV files in this folder
-outPutParentDir <- "E:\\Example\\Example"
+outPutParentDir <- "E:\\2019.06_MicrobiomeStrainMediaMultiTime_Lipidomics_Pos\\2019.06.18_Extraction\\8.FilterPeaks"
 
 # CSV peak window table - contains window bounds - standard format
-csvWindowTable <- "ExampleFileName.csv"
+csvWindowTable <- "MZminePeakWindowViewerTable(20190620h0041).csv"
 
 # use manual review table?
 useManualReview <- TRUE
 
 # CSV manual review tracking table - standard format
 # if not used, set to NA
-csvManualReviewTable <- "ExampleFileName2.csv"
+csvManualReviewTable <- "reviewTracking(2019.06.21.1059).csv"
 
 # use model predictions score?
 useModelScore <- TRUE
 
 # CSV peak score table - standard format
 # Variable not used if useModelScore set to FALSE
-csvPredictionScoreTable <- "ExampleFileName3.csv"
+csvPredictionScoreTable <- "windowPredictionTable(20190626h1345).csv"
 
 # peak model score threshold - scores at or above this number will be retained
 # Variable not used if useModelScore set to FALSE
@@ -134,11 +139,10 @@ if (useModelScore == TRUE & useManualReview == FALSE) {
 if (useModelScore == TRUE & useManualReview == TRUE) {
 
   # remove unviewed windows with low score
-  dt.windows <- dt.windows[viewed == 1 | (viewed == 0 & predProb > scoreThresh)]
-
-  dt.windows$predProb <- NULL
+  dt.windows <- dt.windows[(viewed == 1 & good1bad0 == 1) | (viewed == 0 & predProb > scoreThresh)]
 
   # remove filtering columns
+  dt.windows$predProb <- NULL
   dt.windows$viewed <- NULL
   dt.windows$good1bad0 <- NULL
 
@@ -157,6 +161,11 @@ scriptName <- basename(sys.frame(1)$ofile)
 
 # remove the file extension ".R"
 scriptName <- gsub("\\.R","",scriptName)
+
+# copy script to folder to save as record
+file.copy(sys.frame(1)$ofile,
+          to = file.path(outputFolderPath,
+                         paste0(scriptName, startTimeStamp, ".R")))
 
 logText <-
   UpdateLogText(logText,"end script",runTime(startTime))
