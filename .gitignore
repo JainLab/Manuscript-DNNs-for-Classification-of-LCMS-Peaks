@@ -13,6 +13,8 @@
 *.pptx
 *.svg
 *.jpg
+*.DS_Store
+data/
 
 # git shortcut bat files
 AddCommitPush.bat
