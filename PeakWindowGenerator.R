@@ -33,6 +33,7 @@ parentDir <- "M:\\folder1\\folderWithFile"
 # name of csv file
 inputCSV <- "MZmine2Export.csv"
 
+
 # set bounds on window size
 
 # set initial m/z bounds on ppm?
@@ -187,68 +188,68 @@ library(mclust)
 # data tables with NA and removing any blank columns
 # also removes duplicated rows
 repZeroEmpty <- function(x) {
-
+  
   # input x is data table
-
+  
   # change 0 cells to NA
   x[x == 0] <- NA
   # change empty cells to NA
   x[x == ""] <- NA
-
+  
   # remove any columns that are all NA - resulting from blank column
   x <- x[,which(unlist(lapply(x, function(x)!all(is.na(x))))), with = FALSE]
   # x <- x[,which(unlist(lapply(x, function(x)!all(is.na(x)))))]
-
+  
   # remove duplicate rows
   x <- unique(x)
-
+  
   return(x)
-
+  
 }
 
 # function for creating a featID column from the mz and RT
 # of each feature and placing it before the first injection
 # column
 addFeatID <- function(x, mzColNum, rtColNum, firstInjColNum) {
-
+  
   # x is the data table
   # mzColNum is the column number with the feature mz
   # rtColNum is the column number with the feature RT
   # firstInjColNum is the first column number that contains
   # injection measurements
-
+  
   # Last label column
   LastLblColNum <- firstInjColNum - 1
-
+  
   # save mz and RT column names
   nameMz <- colnames(x)[mzColNum]
   nameRt <- colnames(x)[rtColNum]
-
+  
   # rename mz and RT columns
   colnames(x)[mzColNum] <- "mz"
   colnames(x)[rtColNum] <- "RT"
-
+  
   # convert mz and RT columns to character vectors
   mzColVect <- sprintf("%09.4f",round(x[,mz],4))
   rtColVect <- sprintf("%4.3f",round(x[,RT],3))
-
+  
   # create column in data set for feature ID combining mz and RT as text
   x[, featID :=  paste0("rt",rtColVect,"mz",mzColVect)]
-
+  
   # revert names
   colnames(x)[mzColNum] <- nameMz
   colnames(x)[rtColNum] <- nameRt
-
+  
   rm(mzColVect)
   rm(rtColVect)
   gc()
-
+  
   # Put feature ID columns before injection
   newFirstInjColNum <- firstInjColNum + 1
   setcolorder(x, c((1:LastLblColNum),ncol(x), (newFirstInjColNum:ncol(x) - 1)))
-
+  
   return(x)
-
+  
 }
 
 # function for importing MZmine exported table of multiple
@@ -257,32 +258,32 @@ addFeatID <- function(x, mzColNum, rtColNum, firstInjColNum) {
 singleCharTable <- function(fullCharTable, idColNum,
                             firstInjColNum,
                             charNum, numChars) {
-
+  
   # column number of first character column
   firstCharCol <- firstInjColNum + charNum - 1
-
+  
   # total columns
   numTotCharCols <- ncol(fullCharTable)
-
+  
   # character column sequence for specified characteristic
   charColNums <- seq(from = firstCharCol,
                      to = numTotCharCols,
                      by = numChars)
-
+  
   # create subset of imported full characteristic table
   # with mz, rt, and specified characteristic
   # columns for specific characteristic
   dt.charTable <- subset(fullCharTable,
                          select = c(idColNum, charColNums))
-
+  
   return(dt.charTable)
-
+  
 }
 
 # function creates a long format data table with columns:
 # featID, injection, value.name
 featInjLongFormat <- function(x, featIDColNum, value.name, na.rm) {
-
+  
   # x is the data table
   # featIDColNum is the column number of the featID column
   # which must immediately precede the injection columns
@@ -291,19 +292,19 @@ featInjLongFormat <- function(x, featIDColNum, value.name, na.rm) {
   # value.name is the name of the measured variable e.g. "pkHt"
   # for peak height measurements
   # na.rm as defined in melt - TRUE for false for removing NA rows
-
+  
   # drop unneeded columns
   x <- x[,featIDColNum:ncol(x)]
-
+  
   # convert to long form with melt
   x <- melt(x, id.vars = "featID",
             measure.vars = c(2:ncol(x)),
             variable.name = "injection",
             value.name = value.name,
             na.rm = na.rm)
-
+  
   return(x)
-
+  
 }
 
 # define function for writing tables to output folder
@@ -312,36 +313,36 @@ wrtTable <- function(table, folderPath, name) {
   # folderPath = path of folder to write to
   # name = base name of output file, time stamp
   # and .csv are added
-
+  
   # export table
   # add data and file extension to the file name
   OutputFileName <- paste0(folderPath,"/",
                            name,
                            startTimeStamp,".csv")
-
+  
   #Write the adjusted dataframe to csv
   fwrite(table,
          file = OutputFileName,
          row.names = FALSE)
-
+  
 }
 
 
 pdfPlotsSingleFile <- function(list.plotPage, orientation, folderPath, name) {
-
+  
   # this function creates a pdf of the plots in list.plotPage
   # and exports them to the file path/name PdfFilePath
-
+  
   # list.plotPage is the list of lists of plot objects
   # orientation is the orientation of the paper
   # "portrait" or "landscape"
   # folderPath = path of folder to write to
   # name = base name of output file, time stamp
   # and .csv are added
-
+  
   PdfFilePath <- paste0(folderPath, "/", name,
                         startTimeStamp, ".pdf")
-
+  
   # paper orientation
   if (orientation == "portrait") {
     paper <- "letter"
@@ -354,13 +355,13 @@ pdfPlotsSingleFile <- function(list.plotPage, orientation, folderPath, name) {
   } else {
     stop("please enter portrait or landscape orientation")
   }
-
+  
   pdf(PdfFilePath, width = width, height = height, paper = paper, onefile = TRUE)
   for (i in seq(length(list.plotPage))) {
     grid.arrange(grobs = list.plotPage[[i]], ncol = 1)
-
+    
     percComplete <- sprintf("%02.1f",round(i/length(list.plotPage) * 100, 1))
-
+    
     flush.console()
     cat("\r", paste0(name, " pdf completion ", percComplete,"%"))
     flush.console()
@@ -426,10 +427,10 @@ dt.PkRT <- singleCharTable(dt.inj, 3, 4,
                            2, numChars)
 
 dt.PkRtStart <- singleCharTable(dt.inj, 3, 4,
-                           3, numChars)
+                                3, numChars)
 
 dt.PkRtEnd <- singleCharTable(dt.inj, 3, 4,
-                                4, numChars)
+                              4, numChars)
 
 dt.PkHt <- singleCharTable(dt.inj, 3, 4,
                            5, numChars)
@@ -454,19 +455,19 @@ dt.PkRT.long <- featInjLongFormat(dt.PkRT, 1,
                                   "pkRT", na.rm = FALSE)
 
 dt.PkRtStart.long <- featInjLongFormat(dt.PkRtStart, 1,
-                                  "pkRtStart", na.rm = FALSE)
+                                       "pkRtStart", na.rm = FALSE)
 
 dt.PkRtEnd.long <- featInjLongFormat(dt.PkRtEnd, 1,
-                                       "pkRtEnd", na.rm = FALSE)
+                                     "pkRtEnd", na.rm = FALSE)
 
 dt.PkMzMin.long <- featInjLongFormat(dt.PkMzMin, 1,
-                                       "pkMzMin", na.rm = FALSE)
+                                     "pkMzMin", na.rm = FALSE)
 
 dt.PkMzMax.long <- featInjLongFormat(dt.PkMzMax, 1,
-                                       "pkMzMax", na.rm = FALSE)
+                                     "pkMzMax", na.rm = FALSE)
 
 dt.PkHt.long <- featInjLongFormat(dt.PkHt, 1,
-                                     "pkHt", na.rm = FALSE)
+                                  "pkHt", na.rm = FALSE)
 
 # write dt.PkHt.long -----------------------------------------
 
@@ -505,11 +506,11 @@ dt.peak.long_og <- copy(dt.peak.long)
 
 # generate a table with the medians of each feature characteristic
 # for each feature as well as the max and min of the RT and m/z
-
+dt.PkMz.long$pkMz<-as.numeric(dt.PkMz.long$pkMz)
 dt.medMz <- dt.PkMz.long[,median(pkMz, na.rm = TRUE),
-                             keyby = .(featID)]
+                         keyby = .(featID)]
 colnames(dt.medMz)[2] <- "medMz"
-
+dt.PkRT.long$pkRT<-as.numeric(dt.PkRT.long$pkRT)
 dt.medRT <- dt.PkRT.long[,median(pkRT, na.rm = TRUE),
                          keyby = .(featID)]
 colnames(dt.medRT)[2] <- "medRT"
@@ -517,43 +518,46 @@ colnames(dt.medRT)[2] <- "medRT"
 dt.sdRT <- dt.PkRT.long[,sd(pkRT, na.rm = TRUE),
                         keyby = .(featID)]
 colnames(dt.sdRT)[2] <- "sdRT"
-
+dt.PkRtStart.long$pkRtStart<-as.numeric(dt.PkRtStart.long$pkRtStart)
 dt.medRtStart <- dt.PkRtStart.long[,median(pkRtStart, na.rm = TRUE),
-                         keyby = .(featID)]
+                                   keyby = .(featID)]
 colnames(dt.medRtStart)[2] <- "medRtStart"
 
 # quantile RT start based on user input
 dt.quantileRtStart <- dt.PkRtStart.long[,quantile(pkRtStart, probs = c(1 - rtQuantile), na.rm = TRUE),
-                                   keyby = .(featID)]
+                                        keyby = .(featID)]
 colnames(dt.quantileRtStart)[2] <- "quantRtStart"
 
+dt.PkRtEnd.long$pkRtEnd<-as.numeric(dt.PkRtEnd.long$pkRtEnd)
 dt.medRtEnd <- dt.PkRtEnd.long[,median(pkRtEnd, na.rm = TRUE),
-                         keyby = .(featID)]
+                               keyby = .(featID)]
 colnames(dt.medRtEnd)[2] <- "medRtEnd"
 
 # quantile RT end based on user input
 dt.quantileRtEnd <- dt.PkRtEnd.long[,quantile(pkRtEnd, probs = c(rtQuantile), na.rm = TRUE),
-                                        keyby = .(featID)]
+                                    keyby = .(featID)]
 colnames(dt.quantileRtEnd)[2] <- "quantRtEnd"
 
 dt.minApexRt <- dt.PkRT.long[,min(pkRT, na.rm = TRUE),
-                                keyby = .(featID)]
+                             keyby = .(featID)]
 colnames(dt.minApexRt)[2] <- "minApexRt"
 
 dt.maxApexRt <- dt.PkRT.long[,max(pkRT, na.rm = TRUE),
-                                keyby = .(featID)]
+                             keyby = .(featID)]
 colnames(dt.maxApexRt)[2] <- "maxApexRt"
 
+dt.PkMzMin.long$pkMzMin<-as.numeric(dt.PkMzMin.long$pkMzMin)
 dt.medMzMin <- dt.PkMzMin.long[,median(pkMzMin, na.rm = TRUE),
-                         keyby = .(featID)]
+                               keyby = .(featID)]
 colnames(dt.medMzMin)[2] <- "medMzMin"
 
 dt.minMzMin <- dt.PkMzMin.long[,min(pkMzMin, na.rm = TRUE),
                                keyby = .(featID)]
 colnames(dt.minMzMin)[2] <- "minMzMin"
 
+dt.PkMzMax.long$pkMzMax<-as.numeric(dt.PkMzMax.long$pkMzMax)
 dt.medMzMax <- dt.PkMzMax.long[,median(pkMzMax, na.rm = TRUE),
-                         keyby = .(featID)]
+                               keyby = .(featID)]
 colnames(dt.medMzMax)[2] <- "medMzMax"
 
 dt.maxMzMax <- dt.PkMzMax.long[,max(pkMzMax, na.rm = TRUE),
@@ -561,13 +565,14 @@ dt.maxMzMax <- dt.PkMzMax.long[,max(pkMzMax, na.rm = TRUE),
 colnames(dt.maxMzMax)[2] <- "maxMzMax"
 
 dt.minMz <- dt.PkMz.long[,min(pkMz, na.rm = TRUE),
-                                keyby = .(featID)]
+                         keyby = .(featID)]
 colnames(dt.minMz)[2] <- "minMz"
 
 dt.maxMz <- dt.PkMz.long[,max(pkMz, na.rm = TRUE),
-                                keyby = .(featID)]
+                         keyby = .(featID)]
 colnames(dt.maxMz)[2] <- "maxMz"
 
+dt.PkHt.long$pkHt<-as.numeric(dt.PkHt.long$pkHt)
 dt.medHt <- dt.PkHt.long[,median(pkHt, na.rm = TRUE),
                          keyby = .(featID)]
 colnames(dt.medHt)[2] <- "medHt"
@@ -577,7 +582,7 @@ dt.sumHt <- dt.PkHt.long[, sum(pkHt, na.rm = TRUE),
 colnames(dt.sumHt)[2] <- "sumHt"
 
 dt.sumDetected <- dt.PkHt.long[,sum(!is.na(pkHt)),
-                              keyby = .(featID)]
+                               keyby = .(featID)]
 colnames(dt.sumDetected)[2] <- "sumDetected"
 
 dt.sumDetected[, propDetect := sumDetected / numInjFiles]
@@ -637,23 +642,23 @@ dt.featSummary[, medHtPrpDet := medHt * propDetect]
 # mz Window (initial) --------------------------------------
 
 if (mzBoundOnPpm == TRUE) {
-
+  
   #  calculate mz window size extremes based on medMz and user input
   dt.featSummary[,maxMzDiff := maxWindowPpm / 1000000 *  medMz]
   # dt.featSummary[,minMzDiff := minWindowPpm / 1000000 * medMz]
-
+  
   # set window based on maxMzDiff
   dt.featSummary[, windMzMin := medMz - maxMzDiff]
   dt.featSummary[, windMzMax := medMz + maxMzDiff]
-
+  
 }
 
 if (mzBoundOnPpm == FALSE) {
-
+  
   # set mz window bounds based on exported m/z min and m/z max
   dt.featSummary[, windMzMin := minMzMin]
   dt.featSummary[, windMzMax := maxMzMax]
-
+  
 }
 
 
@@ -667,18 +672,18 @@ dt.featSummary[, windRtMax := maxApexRt + .001]
 
 
 if (considerTails == TRUE) {
-
+  
   # set RT window based on the input quantiles of the min and max reported
   # by MZmine or by the min or max of the RT of the apex,
   # whichever is more extreme.
   dt.featSummary[, windRtMin :=
                    ifelse(quantRtStart < windRtMin,
                           quantRtStart, windRtMin)]
-
+  
   dt.featSummary[, windRtMax :=
                    ifelse(quantRtEnd > windRtMax,
                           quantRtEnd, windRtMax)]
-
+  
 }
 
 
@@ -686,12 +691,12 @@ if (considerTails == TRUE) {
 # use standard deviation to set.
 
 if (!is.null(minWindowRtSd)) {
-
+  
   dt.featSummary[, windRtMin :=
                    ifelse(windRtMin < medRT - minWindowRtSd * sdRT,
                           windRtMin,
                           medRT - minWindowRtSd * sdRT)]
-
+  
   dt.featSummary[, windRtMax :=
                    ifelse(windRtMax > medRT + minWindowRtSd * sdRT,
                           windRtMax,
@@ -699,12 +704,12 @@ if (!is.null(minWindowRtSd)) {
 }
 
 if (!is.null(maxWindowRtSd)) {
-
+  
   dt.featSummary[, windRtMin :=
                    ifelse(windRtMin > medRT - maxWindowRtSd * sdRT,
                           windRtMin,
                           medRT - maxWindowRtSd * sdRT)]
-
+  
   dt.featSummary[, windRtMax :=
                    ifelse(windRtMax < medRT + maxWindowRtSd * sdRT,
                           windRtMax,
@@ -715,30 +720,30 @@ if (!is.null(maxWindowRtSd)) {
 # Apply RT span requirements
 
 if (!is.null(minWindowRtDur)) {
-
+  
   minWindowRtDiff <- minWindowRtDur/2
-
+  
   dt.featSummary[, windRtMin :=
                    ifelse(windRtMin < medRT - minWindowRtDiff,
                           windRtMin, medRT - minWindowRtDiff)]
-
+  
   dt.featSummary[, windRtMax :=
                    ifelse(windRtMax > medRT + minWindowRtDiff,
                           windRtMax, medRT + minWindowRtDiff)]
 }
 
 if (!is.null(maxWindowRtDur)) {
-
+  
   maxWindowRtDiff <- maxWindowRtDur/2
-
+  
   dt.featSummary[, windRtMin :=
                    ifelse(windRtMin > medRT - maxWindowRtDiff,
                           windRtMin, medRT - maxWindowRtDiff)]
-
+  
   dt.featSummary[, windRtMax :=
                    ifelse(windRtMax < medRT + maxWindowRtDiff,
                           windRtMax, medRT + maxWindowRtDiff)]
-
+  
 }
 
 
@@ -761,95 +766,95 @@ wrtTable(dt.featSummary, outputFolderPath, "Table_featureSummary")
 # function write window table ----------------------------------------------
 
 WrtWindowTable <- function(dt.windowFinal, outputFolderPath, tableName) {
-
+  
   # add window ID ------------------------------------------------------------
-
+  
   # formats window table for writing and writes
-
+  
   # replace featID with identifier based on RT start
   setorder(dt.windowFinal, windRtMin, na.last = TRUE)
-
+  
   # create column for windowID - only give IDs to remaining windows
   dt.windowFinal[,windowID := paste0("window",
                                      sprintf("%09i",
                                              seq_len(nrow(dt.windowFinal))))]
-
+  
   setcolorder(dt.windowFinal,
               c("windowID",
                 "windMzMin",
                 "windMzMax",
                 "windRtMin",
                 "windRtMax"))
-
+  
   # round before writing ------------------------------------------------------
-
+  
   dt.windowFinal[,windMzMin := round(windMzMin,5)]
   dt.windowFinal[,windMzMax := round(windMzMax,5)]
   dt.windowFinal[,windRtMin := round(windRtMin,4)]
   dt.windowFinal[,windRtMax := round(windRtMax,4)]
-
+  
   # write peakWindowViewer tables ------------------------------------
-
+  
   # write using defined function
   wrtTable(dt.windowFinal, outputFolderPath, tableName)
-
+  
   return(dt.windowFinal)
-
+  
 }
 
 dt.windowOne <- subset(dt.featSummary,
-                         select = c("windMzMin",
-                                    "windMzMax",
-                                    "windRtMin",
-                                    "windRtMax"))
+                       select = c("windMzMin",
+                                  "windMzMax",
+                                  "windRtMin",
+                                  "windRtMax"))
 
 # if no address overlap ---------------------------------------------------
 
 if (addressOverlap == FALSE) {
-
+  
   dt.windowFinal <- copy(dt.windowOne)
-
+  
   tableName <- "Table_MzRtWindows"
-
+  
   dt.windowFinal <- WrtWindowTable(dt.windowFinal, outputFolderPath, tableName)
 }
 
 # if address overlap --------------------------------------------
 
 if (addressOverlap == TRUE) {
-
+  
   # _write window table pre-adjustment ----------------------------------------
-
+  
   tableName <- "Table_MzRtWindows_PreAdj"
-
+  
   WrtWindowTable(dt.windowOne, outputFolderPath, tableName)
-
+  
   # _WindowPlot function -----------------------------------------------------
-
+  
   WindowPlot <- function(plot.review, numPlot, dt.windows,
                          lpdt.peak.long, dom.featID) {
-
+    
     if (is.null(lpdt.peak.long)) { # null points table entered
-
+      
       points <- NULL
-
+      
     } else { # points table entered
-
+      
       points <- geom_point(aes(x = pkRT, y = pkMz, shape = featID),
                            data = lpdt.peak.long)
-
-
+      
+      
     }
-
+    
     # plot the apex points
     p <- ggplot() +
       points
-
+    
     # add a layer for each window
     for (i_feat in 1:nrow(dt.windows)) {
-
+      
       dt.windows.feat <- dt.windows[i_feat]
-
+      
       lpdt.Window <- data.table(windMz = c(dt.windows.feat$windMzMax,
                                            dt.windows.feat$windMzMax,
                                            dt.windows.feat$windMzMin,
@@ -860,75 +865,75 @@ if (addressOverlap == TRUE) {
                                            dt.windows.feat$windRtMax,
                                            dt.windows.feat$windRtMin,
                                            dt.windows.feat$windRtMin))
-
+      
       p <- p +
         geom_path(aes(x = windRt, y = windMz),
                   data = lpdt.Window, linetype = 1)
-
+      
     }
-
-
-
+    
+    
+    
     titleText <- paste0(" dom:", dom.featID)
-
+    
     p <- p +
       ggtitle(titleText) +
       theme.std
-
-
+    
+    
     plot.review[[numPlot]]  <- list()
-
+    
     plot.review[[numPlot]][[1]] <- p
-
+    
     return(plot.review)
-
+    
   }
-
+  
   # _while loop prep ------------------------------------------------------
-
+  
   # sort by rank
   setorder(dt.featSummary, rank)
-
+  
   # add overlap, RtSplit, and mergeToDom columns
   dt.featSummary[, overlap := 0]
   dt.featSummary[, RtSplit := 0]
   dt.featSummary[, mergeToDom := NA]
-
+  
   # track number of merges and splits
   numWindowMerges <- 0
   numWindowRtSplits <- 0
   numWindowMzSplits <- 0
-
+  
   # counter for plots
   numPlot <- 0
-
+  
   # initialize plot list
   plot.review <- list()
-
+  
   # initialize the window table to shrink
   dt.loopShrink <- copy(dt.featSummary)
   setorder(dt.loopShrink, rank)
-
+  
   # initialize overlap counter
   numWindowsInitially <- nrow(dt.loopShrink)
   numWindowsRemain <- nrow(dt.loopShrink)
-
+  
   # create empty table to add new windows to
   dt.windowGrow <- data.table(windMzMin = numeric(),
                               windMzMax = numeric(),
                               windRtMin = numeric(),
                               windRtMax = numeric())
-
+  
   # loop iteration counter
   loopIteration <- 0
-
+  
   # _while loop overlap ----------------------------------------------------
-
+  
   while (numWindowsRemain > 0) { # run until dt.loopShrink is gone
-
+    
     # update loop iteration counter and percent completion tracking
     loopIteration <- loopIteration + 1
-
+    
     # pull window values from table
     dom.windMzMin <- dt.loopShrink$windMzMin[1]
     dom.windMzMax <- dt.loopShrink$windMzMax[1]
@@ -943,230 +948,230 @@ if (addressOverlap == TRUE) {
     dom.sdRT <- dt.loopShrink$sdRT[1]
     dom.rank <- dt.loopShrink$rank[1]
     dom.medMz <- dt.loopShrink$medMz[1]
-
+    
     lpvar.mzDiff <- dt.loopShrink$medMz[1] * maxWindowPpm / 1000000
-
+    
     # subset dt.loopShrink to overlapping mz windows
     lpdt.overlap <- subset(dt.loopShrink,
                            windMzMin <= dom.windMzMax)
-
+    
     lpdt.overlap <- subset(lpdt.overlap,
                            windMzMax >= dom.windMzMin)
-
+    
     # Expand window in RT direction to incorporate the RT bounds of any
     # overlapping window
-
+    
     # initialize the while loop variables to start loop
     prev.windRtMin <- dom.windRtMin + 1
     prev.windRtMax <- dom.windRtMax - 1
-
+    
     # __check for overlap ------------------------------------------------
-
+    
     # continue checking for RT window overlaps until window stops expanding
     while (dom.windRtMin < prev.windRtMin | dom.windRtMax > prev.windRtMax) {
-
+      
       # update loop variables
       prev.windRtMin <- dom.windRtMin
       prev.windRtMax <- dom.windRtMax
-
+      
       # subset to overlap
       lpdt.overlap <- lpdt.overlap[windRtMax >= dom.windRtMin]
       lpdt.overlap <- lpdt.overlap[windRtMin <= dom.windRtMax]
-
+      
       # set the new window RT limits to the RT edges of the group of
       # overlapping windows
       dom.windRtMin <- min(lpdt.overlap$windRtMin)
       dom.windRtMax <- max(lpdt.overlap$windRtMax)
-
+      
     }
-
+    
     numGroupOverlap <- nrow(lpdt.overlap)
-
+    
     # remove features in lpdt.overlap from dt.loopShrink
     dt.loopShrink <- dt.loopShrink[!dt.loopShrink$featID %in% lpdt.overlap$featID]
-
+    
     # __if overlap -------------------------------------------------
-
+    
     # if there are overlapping windows, cluster for new windows
     if (numGroupOverlap > 1) {
-
+      
       # subset dt.peak.long to features in lpdt.overlap
       lpdt.peak.long <- dt.peak.long[featID %in% lpdt.overlap$featID]
-
+      
       # ___plot for review pre-fix-------------------------------------
-
+      
       # advance plot counter
       numPlot <- numPlot + 1
-
+      
       plot.review <- WindowPlot(plot.review, numPlot,
                                 dt.windows = lpdt.overlap,
                                 lpdt.peak.long, dom.featID)
-
+      
       # ___cluster prep -------------------------------------------
-
+      
       # create copy of lpdt.peak.long
       lpdt.cluster <- copy(lpdt.peak.long)
-
+      
       # create scaled columns
       lpdt.cluster[,mzScaled := pkMz / (2 * lpvar.mzDiff)]
       lpdt.cluster[,rtScaled := pkRT / minWindowRtDur]
-
+      
       # maximum number of potential clusters (based on number of
       # overlapping windows)
       maxNumCluster <- max(numGroupOverlap * 1.8, 5)
-
+      
       # create McLust cluster object
       d_clust <- Mclust(lpdt.cluster[,c("rtScaled", "mzScaled")],
                         G = 1:maxNumCluster,
                         modelNames = c("EII", "VII", "EEI",
                                        "VEI", "EVI", "VVI"),
                         verbose = FALSE)
-
+      
       # plot(d_clust, what = "classification")
-
+      
       # add cluster to table
       lpdt.cluster[, cluster := d_clust[["classification"]]]
-
+      
       # __create cluster windows ---------------------------------------------
-
+      
       # find min and max rt and mz by cluster
       lpdt.minMz <- lpdt.cluster[, min(pkMz, na.rm = TRUE),
                                  keyby = .(cluster)]
       colnames(lpdt.minMz)[2] <- "minMz"
-
+      
       lpdt.maxMz <- lpdt.cluster[, max(pkMz, na.rm = TRUE),
                                  keyby = .(cluster)]
       colnames(lpdt.maxMz)[2] <- "maxMz"
-
+      
       lpdt.medMz <- lpdt.cluster[, median(pkMz, na.rm = TRUE),
                                  keyby = .(cluster)]
       colnames(lpdt.medMz)[2] <- "medMz"
-
+      
       lpdt.minRt <- lpdt.cluster[, min(pkRT, na.rm = TRUE),
                                  keyby = .(cluster)]
       colnames(lpdt.minRt)[2] <- "minRt"
-
+      
       lpdt.maxRt <- lpdt.cluster[, max(pkRT, na.rm = TRUE),
                                  keyby = .(cluster)]
       colnames(lpdt.maxRt)[2] <- "maxRt"
-
+      
       lpdt.medRt <- lpdt.cluster[, median(pkRT, na.rm = TRUE),
                                  keyby = .(cluster)]
       colnames(lpdt.medRt)[2] <- "medRt"
-
+      
       # create a new data table for window information
       lpdt.clusterWindow <- copy(lpdt.minMz)
-
+      
       # add other columns
       lpdt.clusterWindow[lpdt.maxMz, maxMz := maxMz]
       lpdt.clusterWindow[lpdt.medMz, medMz := medMz]
       lpdt.clusterWindow[lpdt.minRt, minRt := minRt]
       lpdt.clusterWindow[lpdt.maxRt, maxRt := maxRt]
       lpdt.clusterWindow[lpdt.medRt, medRt := medRt]
-
+      
       rm(lpdt.minMz,
          lpdt.maxMz,
          lpdt.medMz,
          lpdt.minRt,
          lpdt.maxRt,
          lpdt.medRt)
-
+      
       # create window RT bounds with small buffers
       lpdt.clusterWindow[, windRtMin := round(minRt - 0.0002,4)]
       lpdt.clusterWindow[, windRtMax := round(maxRt + 0.0002,4)]
-
+      
       # enforce window minimum duration
       lpdt.clusterWindow[, windRtMin := pmin(windRtMin,
                                              round(medRt - minWindowRtDur/2,4))]
       lpdt.clusterWindow[, windRtMax := pmax(windRtMax,
                                              round(medRt + minWindowRtDur/2,4))]
-
+      
       # create window mz bounds using extreme points median and mz based on ppm
       lpdt.clusterWindow[, windMzMin := pmin(round(minMz - 0.00002,5),
-                                            (medMz - lpvar.mzDiff/2))]
+                                             (medMz - lpvar.mzDiff/2))]
       lpdt.clusterWindow[, windMzMax := pmax(round(minMz + 0.00002,5),
-                                            (medMz + lpvar.mzDiff/2))]
-
+                                             (medMz + lpvar.mzDiff/2))]
+      
       # __filter cluster windows by cluster population ----------------------
-
+      
       # find number of points per cluster
       lpdt.clusterPop <- lpdt.cluster[, .N, by = cluster]
-
+      
       # find clusters with fewer than minimum points
       lpdt.clustRm <- lpdt.clusterPop[N < minApexPerCluster]
-
+      
       # if clusters have fewer than minimum points, remove them
       if (nrow(lpdt.clustRm) > 0) {
-
+        
         # remove clusters with fewer than minimum points
         lpdt.clusterWindow <- lpdt.clusterWindow[!lpdt.clusterWindow$cluster %in%
                                                    lpdt.clustRm$cluster]
       }
-
+      
       # __Filter cluster windows by mixing proportion ------------------------
-
+      
       # min mixing proportion per cluster
       minMixProportion <- 0.2 / numGroupOverlap
-
+      
       lpdt.clustMixPro <- data.table(cluster = 1:d_clust[["G"]],
                                      mixPro = d_clust[["parameters"]][["pro"]])
-
+      
       # find clusters with lower than minimum mixing proportion
       lpdt.clustRm <- lpdt.clustMixPro[mixPro < minMixProportion]
-
+      
       # if clusters have lower than minimum mixing proportion, remove them
       if (nrow(lpdt.clustRm) > 0) {
-
+        
         # remove clusters with lower than minimum mixing proportion
         lpdt.clusterWindow <- lpdt.clusterWindow[!lpdt.clusterWindow$cluster %in%
                                                    lpdt.clustRm$cluster]
-
+        
       }
-
+      
       # __combine overlapping cluster windows --------------------------------
-
+      
       numClusterRemain <- nrow(lpdt.clusterWindow)
-
+      
       # create window table
       lpdt.window <- subset(lpdt.clusterWindow,
                             select = c("windMzMin", "windMzMax",
                                        "windRtMin", "windRtMax"))
-
+      
       # initialize overlap counter to start while loop
       numOverlap <- 1
-
+      
       while (numOverlap  > 0) { # run until lpdt.clusterWindow is gone
-
+        
         # reset overlap counter
         numOverlap  <- 0
-
+        
         # copy lpdt.window to loop through
         lpdt.clusterGroupShrink <- copy(lpdt.window)
-
+        
         # reset lpdt.window
         lpdt.window <- data.table(windMzMin = numeric(),
-                                    windMzMax = numeric(),
-                                    windRtMin = numeric(),
-                                    windRtMax = numeric())
-
+                                  windMzMax = numeric(),
+                                  windRtMin = numeric(),
+                                  windRtMax = numeric())
+        
         # add duration column
         lpdt.clusterGroupShrink[, windRtDur := windRtMax - windRtMin]
-
+        
         # sort by duration
         setorder(lpdt.clusterGroupShrink, -windRtDur)
-
+        
         # add rank
         lpdt.clusterGroupShrink[, rank := 1:nrow(lpdt.clusterGroupShrink)]
-
+        
         while (nrow(lpdt.clusterGroupShrink) > 0) {
-
+          
           # pull window values from table top row
           domClus.windMzMin <- lpdt.clusterGroupShrink$windMzMin[1]
           domClus.windMzMax <- lpdt.clusterGroupShrink$windMzMax[1]
           domClus.windRtMin <- lpdt.clusterGroupShrink$windRtMin[1]
           domClus.windRtMax <- lpdt.clusterGroupShrink$windRtMax[1]
           domClus.rank <- lpdt.clusterGroupShrink$rank[1]
-
+          
           # subset dt.loopShrink to overlapping windows
           lpdt.overlapCluster <- subset(lpdt.clusterGroupShrink,
                                         windMzMin <= domClus.windMzMax)
@@ -1181,17 +1186,17 @@ if (addressOverlap == TRUE) {
           if (nrow(lpdt.overlapCluster) > 0) {
             lpdt.overlapCluster <- subset(lpdt.overlapCluster,
                                           windRtMax >= domClus.windRtMin)
-
+            
           }
           if (nrow(lpdt.overlapCluster) > 1) {
-
+            
             # increase overlap counter
             numOverlap  <- numOverlap + 1
-
+            
             # remove features in lpdt.overlap from lpdt.clusterGroupShrink
             lpdt.clusterGroupShrink <- lpdt.clusterGroupShrink[!lpdt.clusterGroupShrink$rank %in%
-                                                       lpdt.overlapCluster$rank]
-
+                                                                 lpdt.overlapCluster$rank]
+            
             # create table row of new merged window boundaries
             lpdt.windowClustMerge <- data.table(
               windMzMin = min(lpdt.overlapCluster$windMzMin),
@@ -1199,16 +1204,16 @@ if (addressOverlap == TRUE) {
               windRtMin = min(lpdt.overlapCluster$windRtMin),
               windRtMax = max(lpdt.overlapCluster$windRtMax)
             )
-
+            
             # add to growing lpdt.window
             lpdt.window <- rbind(lpdt.window, lpdt.windowClustMerge)
-
+            
           } else {# if no overlap
-
+            
             # remove top row from table
             lpdt.clusterGroupShrink <- subset(lpdt.clusterGroupShrink,
                                               rank != domClus.rank)
-
+            
             # add dominant window values to lpdt.window
             lpdt.windowClustMerge <- data.table(
               windMzMin = domClus.windMzMin,
@@ -1216,153 +1221,153 @@ if (addressOverlap == TRUE) {
               windRtMin = domClus.windRtMin,
               windRtMax = domClus.windRtMax
             )
-
+            
             # add to growing lpdt.window
             lpdt.window <- rbind(lpdt.window, lpdt.windowClustMerge)
-
+            
           } # end overlap if/else
-
+          
         } # end cluster table shrink while loop
-
+        
       } # end cluster merge while loop
-
+      
       # _plot new windows -----------------------------------------------
-
+      
       # advance plot counter
       numPlot <- numPlot + 1
-
+      
       plot.review <- WindowPlot(plot.review, numPlot,
                                 dt.windows = lpdt.window,
                                 lpdt.peak.long, dom.featID)
-
+      
       # _if no overlaps ------------------------------------------------
-
-  } else {
-
-    # if no overlaps create from single lpdt.overlap entry
-    lpdt.window <- subset(lpdt.overlap,
-                          select = c("windMzMin",
-                                     "windMzMax",
-                                     "windRtMin",
-                                     "windRtMax"))
-
-  } # end original group overlap if/else statement
-
+      
+    } else {
+      
+      # if no overlaps create from single lpdt.overlap entry
+      lpdt.window <- subset(lpdt.overlap,
+                            select = c("windMzMin",
+                                       "windMzMax",
+                                       "windRtMin",
+                                       "windRtMax"))
+      
+    } # end original group overlap if/else statement
+    
     # _add new windows to dt.windowGrow ---------------------------------
-
+    
     # add new windows to dt.windowGrow
     dt.windowGrow <- rbind(dt.windowGrow, lpdt.window)
-
+    
     # update numWindowsRemain
     numWindowsRemain <- nrow(dt.loopShrink)
-
+    
     percComplete <- round((numWindowsInitially - numWindowsRemain)/numWindowsInitially * 100,1)
-
+    
     print(paste0("cluster loop completion: ", percComplete,"%"))
-
+    
   } # end overlap while loop
-
+  
   summaryText <-
     updateSummary("end cluster loop")
-
+  
   # _PDF review plots -------------------------------------------
-
+  
   if (plotWindows == TRUE) {
-
+    
     if (length(plot.review) > 0) {
-
+      
       pdfPlotsSingleFile(plot.review, "landscape",
                          outputFolderPath, "reviewOverlapPlots")
     }
   }
-
+  
   # _Final merge overlap loop ------------------------------------------------------
-
+  
   # to ensure no overlaps that weren't checked as previous grouping
-
+  
   # create window table
   lpdt.window2 <- copy(dt.windowGrow)
-
+  
   # track window only plots
   numPlotWindOnly <- 0
-
+  
   # initialize plot list
   plot.reviewWindOnly <- list()
-
+  
   # initialize overlap counter to start while loop
   numOverlap <- 1
-
+  
   print("begin final merge loop")
-
+  
   while (numOverlap  > 0) {
-
+    
     # reset overlap counter
     numOverlap  <- 0
-
+    
     # copy lpdt.window2 to loop through
     lpdt.finalMergeShrink <- copy(lpdt.window2)
-
+    
     # reset lpdt.window2
     lpdt.window2 <- data.table(windMzMin = numeric(),
-                              windMzMax = numeric(),
-                              windRtMin = numeric(),
-                              windRtMax = numeric())
-
+                               windMzMax = numeric(),
+                               windRtMin = numeric(),
+                               windRtMax = numeric())
+    
     # add duration column
     lpdt.finalMergeShrink[, windRtDur := windRtMax - windRtMin]
-
+    
     # sort by duration
     setorder(lpdt.finalMergeShrink, -windRtDur)
-
+    
     # add rank
     lpdt.finalMergeShrink[, rank := 1:nrow(lpdt.finalMergeShrink)]
-
+    
     while (nrow(lpdt.finalMergeShrink) > 0) {
-
+      
       # pull window values from table top row
       domClus.windMzMin <- lpdt.finalMergeShrink$windMzMin[1]
       domClus.windMzMax <- lpdt.finalMergeShrink$windMzMax[1]
       domClus.windRtMin <- lpdt.finalMergeShrink$windRtMin[1]
       domClus.windRtMax <- lpdt.finalMergeShrink$windRtMax[1]
       domClus.rank <- lpdt.finalMergeShrink$rank[1]
-
+      
       # subset dt.loopShrink to overlapping windows
       lpdt.overlapFinal <- subset(lpdt.finalMergeShrink,
-                                    windMzMin <= domClus.windMzMax)
+                                  windMzMin <= domClus.windMzMax)
       if (nrow(lpdt.overlapFinal) > 0) {
         lpdt.overlapFinal <- subset(lpdt.overlapFinal,
-                                      windMzMax >= domClus.windMzMin)
+                                    windMzMax >= domClus.windMzMin)
       }
       if (nrow(lpdt.overlapFinal) > 0) {
         lpdt.overlapFinal <- subset(lpdt.overlapFinal,
-                                      windRtMin <= domClus.windRtMax)
+                                    windRtMin <= domClus.windRtMax)
       }
       if (nrow(lpdt.overlapFinal) > 0) {
         lpdt.overlapFinal <- subset(lpdt.overlapFinal,
-                                      windRtMax >= domClus.windRtMin)
-
+                                    windRtMax >= domClus.windRtMin)
+        
       }
       if (nrow(lpdt.overlapFinal) > 1) {
-
+        
         # increase overlap counter
         numOverlap  <- numOverlap + 1
-
+        
         # remove features in lpdt.overlap from lpdt.finalMergeShrink
         lpdt.finalMergeShrink <- lpdt.finalMergeShrink[!lpdt.finalMergeShrink$rank %in%
-                                                             lpdt.overlapFinal$rank]
-
+                                                         lpdt.overlapFinal$rank]
+        
         # __plot windows pre-merge ----------------------------------
-
+        
         # advance plot counter
         numPlotWindOnly <- numPlotWindOnly + 1
-
+        
         plot.reviewWindOnly <- WindowPlot(plot.reviewWindOnly, numPlotWindOnly,
-                                  dt.windows = lpdt.overlapFinal,
-                                  lpdt.peak.long = NULL,
-                                  dom.featID = domClus.windMzMax)
-
+                                          dt.windows = lpdt.overlapFinal,
+                                          lpdt.peak.long = NULL,
+                                          dom.featID = domClus.windMzMax)
+        
         # __merge -----------------------------------------------------------
-
+        
         # create table row of new merged window boundaries
         lpdt.windowFinalMerge <- data.table(
           windMzMin = min(lpdt.overlapFinal$windMzMin),
@@ -1370,26 +1375,26 @@ if (addressOverlap == TRUE) {
           windRtMin = min(lpdt.overlapFinal$windRtMin),
           windRtMax = max(lpdt.overlapFinal$windRtMax)
         )
-
+        
         # add to growing lpdt.window2
         lpdt.window2 <- rbind(lpdt.window2, lpdt.windowFinalMerge)
-
+        
         # _plot post merge -------------------------------------------------
-
+        
         # advance plot counter
         numPlotWindOnly <- numPlotWindOnly + 1
-
+        
         plot.reviewWindOnly <- WindowPlot(plot.reviewWindOnly, numPlotWindOnly,
                                           dt.windows = lpdt.windowFinalMerge,
                                           lpdt.peak.long = NULL,
                                           dom.featID = domClus.windMzMax)
-
+        
       } else {# if no overlap
-
+        
         # remove top row from table
         lpdt.finalMergeShrink <- subset(lpdt.finalMergeShrink,
-                                          rank != domClus.rank)
-
+                                        rank != domClus.rank)
+        
         # add dominant window values to lpdt.window2
         lpdt.windowFinalMerge <- data.table(
           windMzMin = domClus.windMzMin,
@@ -1397,40 +1402,40 @@ if (addressOverlap == TRUE) {
           windRtMin = domClus.windRtMin,
           windRtMax = domClus.windRtMax
         )
-
+        
         # add to growing lpdt.window2
         lpdt.window2 <- rbind(lpdt.window2, lpdt.windowFinalMerge)
-
+        
       } # end overlap if/else
-
+      
     } # end shrink table while loop
-
+    
     print(paste0("remaining window overlaps: ", numOverlap))
-
+    
   } # end final merge while loop
-
+  
   summaryText <-
     updateSummary("end final merge loop")
-
+  
   # assign data table to post final merge
   dt.windowFinal <- copy(lpdt.window2)
-
+  
   # _PDF review plots -------------------------------------------
-
+  
   if (plotWindows == TRUE) {
-
+    
     if (length(plot.reviewWindOnly) > 0) {
-
+      
       pdfPlotsSingleFile(plot.reviewWindOnly, "landscape",
                          outputFolderPath, "reviewFinalMergePlots")
-
+      
     }
   }
-
+  
   tableName <- "Table_MzRtWindows"
-
+  
   dt.windowFinal <- WrtWindowTable(dt.windowFinal, outputFolderPath, tableName)
-
+  
 } # end address overlap if statement
 
 # context window table -------------------------------------------------------
@@ -1533,26 +1538,5 @@ ggsave(filename = "plot_mzRtScatter.pdf",
        width = 11,
        height = 8.5,
        units = "in")
-
-# Endscript (record keeping) -----------------------------------------
-
-# get script file name
-scriptName <- basename(sys.frame(1)$ofile)
-
-# remove the file extension ".R"
-scriptName <- gsub("\\.R$","",scriptName)
-
-# copy script to folder to save as record
-file.copy(sys.frame(1)$ofile,
-          to = file.path(outputFolderPath,
-                         paste0(scriptName, startTimeStamp, ".R")))
-
-summaryText <-
-  updateSummary("end script")
-
-if (1 == 1) {
-  print("script complete")
-  print(runTime())
-}
 
 
